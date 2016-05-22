@@ -6,18 +6,32 @@ function preload() {
     game.load.image('ground', 'assets/platform.png');
     game.load.image('star', 'assets/star.png');
     game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
-
+    game.load.tilemap('level1', 'Tile/bittymon.json', null, Phaser.Tilemap.TILED_JSON);
+    game.load.image('grass', 'Tile/grass.png');
+    game.load.image('bush', 'Tile/Green_Wig_Bush.gif');
+    game.load.image('house', 'Tile/house.png');
+    game.load.image('tree', 'Tile/tree.png');
+    game.load.image('water', 'Tile/WaterTile.png');
 }
 
 
-var player, platforms, cursors;
+var player, platforms, cursors, map, backgroundLayer, blockedLayer
 function create() {
 
     //  We're going to be using physics, so enable the Arcade Physics system
     game.physics.startSystem(Phaser.Physics.ARCADE);
 
     //  A simple background for our game
-    game.add.sprite(0, 0, 'sky');
+    map = game.add.tilemap('level1');
+    map.addTilesetImage('Grass', 'grass');
+    map.addTilesetImage('Tree', 'tree');
+    map.addTilesetImage('House', 'house');
+    map.addTilesetImage('Bush', 'bush');
+    map.addTilesetImage('Water', 'water');
+    backgroundLayer = map.createLayer('Tile Layer 1');
+    blockedLayer = map.createLayer('Tile Layer 2');
+    //backgroundLayer.resizeWorld();
+    //game.add.sprite(0, 0, 'sky');
 
     // The player and its settings
     player = game.add.sprite(game.world.centerX, game.world.centerY, 'dude');
