@@ -1,4 +1,4 @@
-var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+var game = new Phaser.Game(600, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
 
 function preload() {
 
@@ -6,16 +6,13 @@ function preload() {
     game.load.image('ground', 'assets/platform.png');
     game.load.image('star', 'assets/star.png');
     game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
+    // tileset
     game.load.tilemap('level1', 'Tile/bittymon.json', null, Phaser.Tilemap.TILED_JSON);
-    game.load.image('grass', 'Tile/grass.png');
-    game.load.image('bush', 'Tile/Green_Wig_Bush.gif');
-    game.load.image('house', 'Tile/house.png');
-    game.load.image('tree', 'Tile/tree.png');
-    game.load.image('water', 'Tile/WaterTile.png');
+    game.load.image('bittymon_tileset', 'Tile/bittymon_tileset.png');
 }
 
 
-var player, platforms, cursors, map, backgroundLayer, blockedLayer
+var player, platforms, cursors, map, backgroundLayer, blockedLayer, bushLayer
 function create() {
 
     //  We're going to be using physics, so enable the Arcade Physics system
@@ -23,18 +20,21 @@ function create() {
 
     //  A simple background for our game
     map = game.add.tilemap('level1');
-    map.addTilesetImage('Grass', 'grass');
-    map.addTilesetImage('Tree', 'tree');
-    map.addTilesetImage('House', 'house');
-    map.addTilesetImage('Bush', 'bush');
-    map.addTilesetImage('Water', 'water');
-    backgroundLayer = map.createLayer('Tile Layer 1');
-    blockedLayer = map.createLayer('Tile Layer 2');
-    //backgroundLayer.resizeWorld();
-    //game.add.sprite(0, 0, 'sky');
+    map.addTilesetImage('tiles', 'bittymon_tileset');
+
+    backgroundLayer = map.createLayer('BackgroundLayer');
+    blockedLayer = map.createLayer('BlockedLayer');
+    bushLayer = map.createLayer('BushLayer');
+
+    map.setCollisionByExclusion([0], true, blockedLayer);
+    backgroundLayer.resizeWorld();
+
+    // create Bushes
+    game.bushes = Bushes(map, bushLayer);
 
     // The player and its settings
     player = game.add.sprite(game.world.centerX, game.world.centerY, 'dude');
+    player.anchor.set(.5);
     //the camera will follow the player in the world
     game.camera.follow(player);
 
@@ -58,6 +58,10 @@ function create() {
 
 function update() {
     //  Reset the players velocity (movement)
+    game.physics.arcade.collide(player, blockedLayer);
+    var isBitty = game.bushes.checkForBittymon(player.position.x, player.position.y);
+    if (isBitty) console.log('whoa! combat!');
+
     player.body.velocity.x = 0;
     player.body.velocity.y = 0;
 
@@ -99,3 +103,30 @@ function update() {
     
 }
 
+
+function Bushes(map, layer){
+    var self = {
+        prevTile: null,
+        probability: null,
+        map: map,
+        layer: layer,
+        checkForBittymon
+    }
+    return self
+
+    function checkForBittymon(x, y){
+        var tile = this.map.getTileWorldXY(x, y, undefined, undefined, this.layer);
+        if (this.prevTile === null && tile !== null) 
+            this.prevTile = tile;
+        // if tile is prevTile don't check
+        else if (tile === null || this.prevTile !== null &&
+                                  tile.x == this.prevTile.x && 
+                                  tile.y == this.prevTile.y)
+            return false;
+
+        if (!this.probability) this.probability = tile.layer.properties.Probability;
+        this.prevTile = tile;
+
+        return Math.random() < this.probability;
+    }
+}
