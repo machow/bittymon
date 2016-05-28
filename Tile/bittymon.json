@@ -49,7 +49,7 @@
                 {
                  "height":0,
                  "id":36,
-                 "name":"Transition",
+                 "name":"transition",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -72,11 +72,11 @@
         {
          "columns":140,
          "firstgid":1,
-         "image":"..\/..\/..\/Downloads\/pokemon_tileset_from_public_tiles_by_chaoticcherrycake-d5xdb0y.png",
+         "image":"bittymon_tileset.png",
          "imageheight":2400,
          "imagewidth":2240,
          "margin":0,
-         "name":"tiles",
+         "name":"bittymon_tileset",
          "spacing":0,
          "tilecount":21000,
          "tileheight":16,

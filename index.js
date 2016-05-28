@@ -1,30 +1,55 @@
-var game = new Phaser.Game(600, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
-
-function preload() {
-
-    game.load.image('sky', 'assets/sky.png');
-    game.load.image('ground', 'assets/platform.png');
-    game.load.image('star', 'assets/star.png');
-    game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
-    // tileset
-    game.load.tilemap('level1', 'Tile/bittymon.json', null, Phaser.Tilemap.TILED_JSON);
-    game.load.image('bittymon_tileset', 'Tile/bittymon_tileset.png');
+function GameMap(game){
+    console.log('game starting');
 }
 
+GameMap.prototype = {
+    level: null,
+    init,
+    preload,
+    create,
+    update
+}
 
-var player, platforms, cursors, map, backgroundLayer, blockedLayer, bushLayer
+var player, platforms, cursors, map, backgroundLayer, blockedLayer, bushLayer, transitions
+
+function init(level) {
+    this.level = level;
+}
+
+function preload() {
+    game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
+    // tileset
+    for (entry of ['bittymon', 'interior']){
+        let mapJson = `Tile/${entry}.json`;
+        game.load.tilemap(entry, mapJson, null, Phaser.Tilemap.TILED_JSON);
+
+    }
+    game.load.image('transition', 'Tile/transition.png');
+    game.load.image('bittymon_tileset', 'Tile/bittymon_tileset.png');
+    // TODO need to rename tile file
+    game.load.image('indoor_tileset', 'Tile/indoor_tileset.png');
+}
+
 function create() {
 
     //  We're going to be using physics, so enable the Arcade Physics system
     game.physics.startSystem(Phaser.Physics.ARCADE);
 
     //  A simple background for our game
-    map = game.add.tilemap('level1');
-    map.addTilesetImage('tiles', 'bittymon_tileset');
+    map = game.add.tilemap(this.level.map);
+    // TODO pull tileset name out of JSON?
+    map.addTilesetImage('bittymon_tileset');
+    map.addTilesetImage('indoor_tileset');
 
     backgroundLayer = map.createLayer('BackgroundLayer');
     blockedLayer = map.createLayer('BlockedLayer');
     bushLayer = map.createLayer('BushLayer');
+
+    // create transition points
+    transitions = game.add.group();
+    transitions.enableBody = true;
+    // TODO rename Transition to transition or v.v.
+    map.createFromObjects('TransitionLayer', 'transition', 'transition', 0, true, false, transitions);
 
     map.setCollisionByExclusion([0], true, blockedLayer);
     backgroundLayer.resizeWorld();
@@ -33,8 +58,9 @@ function create() {
     game.bushes = Bushes(map, bushLayer);
 
     // The player and its settings
-    player = game.add.sprite(game.world.centerX, game.world.centerY, 'dude');
+    player = game.add.sprite(this.level.enterX, this.level.enterY, 'dude');
     player.anchor.set(.5);
+    player.scale.setTo(.5, .5);
     //the camera will follow the player in the world
     game.camera.follow(player);
 
@@ -59,6 +85,7 @@ function create() {
 function update() {
     //  Reset the players velocity (movement)
     game.physics.arcade.collide(player, blockedLayer);
+    game.physics.arcade.overlap(player, transitions, transitionOverlap);
     var isBitty = game.bushes.checkForBittymon(player.position.x, player.position.y);
     if (isBitty) console.log('whoa! combat!');
 
@@ -100,9 +127,24 @@ function update() {
 
         player.frame = 4;
     }
+
+    if (cursors.down.shiftKey){
+        let {x,y} = player.position;
+        console.log(map.getTileWorldXY(x, y, undefined, undefined, transitionObject));
+    }
     
 }
 
+function transitionOverlap(sprite, transition){
+    console.log('yo, transition time');
+    console.log(transition);
+    game.state.start("GameMap", true, false, {
+        map: 'interior',
+        enterX: 300,
+        enterY: 300
+    })
+
+}
 
 function Bushes(map, layer){
     var self = {
@@ -130,3 +172,14 @@ function Bushes(map, layer){
         return Math.random() < this.probability;
     }
 }
+
+var game = new Phaser.Game(600, 600, Phaser.AUTO, 'game');
+
+defaultLevel = {
+        map: 'bittymon',
+        enterX: 300,
+        enterY: 300
+};
+
+game.state.add("GameMap", GameMap);
+game.state.start("GameMap", true, false, defaultLevel);
