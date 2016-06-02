@@ -1,3 +1,4 @@
+// TODO Browserify
 function GameMap(game){
     console.log('game starting');
 }
@@ -10,7 +11,7 @@ GameMap.prototype = {
     update
 }
 
-var player, platforms, cursors, map, backgroundLayer, blockedLayer, bushLayer, transitions
+var player, platforms, cursors, map, backgroundLayer, blockedLayer, bushLayer, transitions, text, textBox
 
 function init(level) {
     this.level = level;
@@ -26,8 +27,9 @@ function preload() {
     }
     game.load.image('transition', 'Tile/transition.png');
     game.load.image('bittymon_tileset', 'Tile/bittymon_tileset.png');
-    // TODO need to rename tile file
     game.load.image('indoor_tileset', 'Tile/indoor_tileset.png');
+    game.load.image('text_tileset', 'assets/text_tileset.png');
+    game.load.tilemap('text_box', 'Tile/text_box.json', null, Phaser.Tilemap.TILED_JSON);
 }
 
 function create() {
@@ -67,16 +69,27 @@ function create() {
     //  We need to enable physics on the player
     game.physics.arcade.enable(player);
 
-    //  Player physics properties. Give the little guy a slight bounce.
-    //player.body.bounce.y = 0.2;
-    //player.body.gravity.y = 300;
-    //player.body.collideWorldBounds = true;
-
     //  Our two animations, walking left and right.
+    player.body.collideWorldBounds = true;
     player.animations.add('left', [0, 1, 2, 3], 10, true);
     player.animations.add('right', [5, 6, 7, 8], 10, true);
     player.animations.add('up', [5], 10, true);
     player.animations.add('down', [5], 10, true);
+
+    // Text ---------
+
+    text_box = game.add.tilemap('text_box');
+    text_box.addTilesetImage('text_tileset');
+    textBox = text_box.createLayer('textBox');
+    textBox.position.y = 340; // TODO where to get this value from?
+    textBox.fixedToCamera = true;
+    textBox.scrollFactorX = 0;
+    textBox.scrollFactorY = 0;
+
+    words = "Bulbasaur Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ivysaur Lorem ipsum dolor sit amet, consectetur adipiscing elit. Venusaur Lorem ipsum dolor sit amet, consectetur adipiscing elit. Charmander Lorem ipsum dolor sit amet, consectetur adipiscing elit. Charmeleon Lorem ipsum dolor sit amet, consectetur adipiscing elit. Charizard Lorem ipsum dolor sit amet, consectetur adipiscing elit. Squirtle Lorem ipsum dolor sit amet."
+    style = {wordWrapWidth: 550, wordWrap: true}
+    dialogue = Dialogue(words, [{words: "<<no>>"}, {words: "<<okay>>"}], 100, style);
+
 
     cursors = game.input.keyboard.createCursorKeys();
 
@@ -127,12 +140,6 @@ function update() {
 
         player.frame = 4;
     }
-
-    if (cursors.down.shiftKey){
-        let {x,y} = player.position;
-        console.log(map.getTileWorldXY(x, y, undefined, undefined, transitionObject));
-    }
-    
 }
 
 function transitionOverlap(sprite, transition){
@@ -170,6 +177,61 @@ function Bushes(map, layer){
         this.prevTile = tile;
 
         return Math.random() < this.probability;
+    }
+}
+
+function Dialogue(words, options, maxChar=30, style={}, nextOnClick=true){
+    var self = {
+        words,
+        maxChar,
+        text: null,
+        options: null,
+        start: 0,
+        next,
+        prev
+    };
+    initialize();
+    return self;
+
+    function initialize(){
+        self.text = game.add.text(25, 368, self.words.slice(self.start, self.maxChar), style);
+        self.text.inputEnabled = true;
+        self.text.fixedToCamera = true;
+        if (nextOnClick) self.text.events.onInputUp.add(function(){ next.bind(self)()}, self);
+
+        // create option text
+        var optX = 25,
+            optY = self.text.bottom;
+
+        self.options = options.map((v) => {
+            let choice = game.add.text(optX, optY, v.words);
+            choice.inputEnabled = true;
+            choice.fixedToCamera = true;
+            choice.events.onInputUp.add(() => console.log(`selected ${v.words}`), self);
+            optX += choice.width + 25;
+            console.log(choice.text.width)
+            console.log(optX);
+            return choice;
+        })
+    };
+
+    function next(){
+        var nChar = this.words.length;
+        this.start = Math.min(nChar, this.start + this.maxChar);
+        console.log(`start is now ${this.start}, nChar is ${nChar}, maxChar is ${this.maxChar}`);
+        this.text.text = this.words.slice(this.start, this.start + this.maxChar);
+    }
+
+    function prev(){
+        this.start = Math.max(0, this.start - this.maxChar);
+        this.text.text = this.words.slice(this.start, this.maxChar);
+    }
+
+    function setInputEvents(textObj, events){
+        textObj.inputEnabled = true;
+        textObj.input.enableDrag();
+        for (let k of Object.keys(events))
+            textObj.events[k].add(events[k], this)
     }
 }
 
