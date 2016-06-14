@@ -1,0 +1,23 @@
+{
+  "key":"first-dialogue",
+  "elements":{
+    "start":{
+      "npc":"Would you like some bitty balls?",
+      "character":[
+        { "text":"Yes",
+          "followup": "end"
+        },
+        {
+          "text":"No"
+        }
+      ]
+    },
+    "end":{
+      "npc":"Great, here you go!",
+      "event":  {
+        "action": "addItem",
+        "id": "bittyball"
+      }
+    }
+  }
+}
