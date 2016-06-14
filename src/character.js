@@ -10,7 +10,8 @@ function Character(){
         rmItem,
         addBitty,
         rmBitty,
-
+        // dispatcher for above actions
+        dispatch
     };
     return self;
 
@@ -48,6 +49,12 @@ function Character(){
         }
         if (!released)
             console.log(`yo, you don't have the bittymon ${id}`);
+    }
 
+    function dispatch(event){
+        var f = this[event.action];
+        if (!f) console.log(`action ${event.action} not found!`);
+
+        return f(event);
     }
 }

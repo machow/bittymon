@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title></title>
+</head>
+<body>
+  
+  <script src="src/character.js"></script>
+  <script src="node_modules/phaser/build/phaser.js"></script>
+  <script src="index.js"></script>
+
+  <script>
+    var request = new XMLHttpRequest();
+    var data
+    request.open('GET', '/dialogue.json', true);
+    request.onload = () => data = JSON.parse(request.responseText);
+
+    request.send()
+  
+  </script>
+</body>
+</html>
